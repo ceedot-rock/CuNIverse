@@ -1,0 +1,3 @@
+[workspace]
+members = ["crates/ctlog", "crates/publisher"]
+resolver = "2"

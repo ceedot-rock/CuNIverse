@@ -1,0 +1,10 @@
+# Bootstrap private key — NEVER commit
+.bootstrap-key
+
+# Rust build output
+target/
+
+# Editor / OS noise
+.DS_Store
+*.swp
+*~

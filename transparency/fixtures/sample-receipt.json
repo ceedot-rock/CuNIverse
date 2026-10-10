@@ -1,0 +1,14 @@
+{
+  "path": "/tmp/fixture.cuni",
+  "source_hash": "f986e8922031eba897b8217a3808ae1c1ba7ebfc1b2f69dc5e7425b4ab6feaa3",
+  "cuni_version": "0.10.0",
+  "exact": true,
+  "summary": "exactness: PASS (1 native seats)",
+  "langs": 1,
+  "seats_ran": ["py"],
+  "stdout_hash": "084c799cd551dd1d8d5c5f9a5d593b2e931f5e36122ee5c793c1d08a19839cc0",
+  "seats": [{"id":"py","seat":"native","emit":true,"run":true}],
+  "signer_pubkey": "c81d2274c06c21b956004ad4afa42512ba218b4c14d2f9a5ae02201c6b8e37a3",
+  "signature": "519d8db1e5576c5e21f2bbe45f51b157d6007d869e3b86e144c4427b9c2f95afda835d9204d8458ea810657b94ea34d72c8aa216a742be291998a6738decf90a"
+}
+

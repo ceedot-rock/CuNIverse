@@ -1,0 +1,46 @@
+# Hourly transparency-log append: validate submissions/pending/, append valid
+# receipts, recompute the Merkle root, regenerate proofs, commit, push.
+name: hourly-append
+
+on:
+  schedule:
+    - cron: "17 * * * *" # hourly, offset from :00 to dodge runner congestion
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: hourly-append
+  cancel-in-progress: false
+
+jobs:
+  append:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Run publisher
+        run: |
+          set -euo pipefail
+          cargo run -p publisher 2>&1 | tee /tmp/publisher.log
+
+      - name: Commit and push
+        run: |
+          set -euo pipefail
+          summary="$(grep '^CT_SUMMARY ' /tmp/publisher.log || true)"
+          appended="$(printf '%s\n' "$summary" | sed -n 's/.*appended=\([0-9][0-9]*\).*/\1/p')"
+          root="$(printf '%s\n' "$summary" | sed -n 's/.*root=\([0-9a-f][0-9a-f]*\).*/\1/p')"
+          appended="${appended:-0}"
+          root="${root:-unknown}"
+          git add log submissions
+          if git diff --cached --quiet; then
+            echo "nothing changed; skipping commit"
+          else
+            git -c user.name "ctlog-bot" \
+                -c user.email "ctlog-bot@users.noreply.github.com" \
+                commit -m "ct: append ${appended} receipts, root ${root}"
+            git push
+          fi

@@ -1,0 +1,97 @@
+# INSTALL TARGET: ceedot-rock/cuni/.github/workflows/ — not active here.
+#
+# This is a reusable workflow TEMPLATE for keyless Sigstore/cosign signing of
+# CuNi release artifacts. It belongs in the `ceedot-rock/cuni` repo, invoked
+# from that repo's release workflow. It is stored in `cuni-transparency` (this
+# repo) only so the signing plan and the template live next to each other.
+#
+# Status: PLANNED — see docs/RELEASE-SIGNING.md. Not yet installed in cuni.
+#
+# Usage from ceedot-rock/cuni/.github/workflows/release.yml:
+#
+#   jobs:
+#     sign:
+#       needs: build
+#       uses: ./.github/workflows/cosign-template.yml
+#       permissions:
+#         id-token: write   # REQUIRED for keyless OIDC signing
+#         contents: write   # to upload bundles as release assets
+#       with:
+#         artifact-dir: dist/
+#         tag: ${{ github.ref_name }}
+
+name: cosign release signing (template)
+
+on:
+  workflow_call:
+    inputs:
+      artifact-dir:
+        description: 'Directory containing release artifacts to sign'
+        required: true
+        type: string
+      tag:
+        description: 'Release tag (e.g. v0.10.0) — used only for logging'
+        required: true
+        type: string
+      cosign-version:
+        description: 'Pinned cosign release version'
+        required: false
+        default: 'v2.2.4'
+        type: string
+
+permissions:
+  id-token: write   # keyless signing via GitHub OIDC — do not remove
+  contents: write   # upload signature bundles to the release
+
+jobs:
+  sign:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install cosign
+        uses: sigstore/cosign-installer@v3.5.0
+        with:
+          cosign-release: ${{ inputs.cosign-version }}
+
+      - name: Generate CHECKSUMS.txt
+        working-directory: ${{ inputs.artifact-dir }}
+        run: |
+          set -euo pipefail
+          sha256sum -- * > CHECKSUMS.txt
+          cat CHECKSUMS.txt
+
+      - name: Sign artifacts (keyless, OIDC)
+        working-directory: ${{ inputs.artifact-dir }}
+        run: |
+          set -euo pipefail
+          for f in *; do
+            case "$f" in
+              *.sigstore.json) continue ;;  # don't sign our own bundles
+            esac
+            echo "Signing $f ..."
+            cosign sign-blob \
+              --yes \
+              --bundle "${f}.sigstore.json" \
+              "${f}"
+          done
+          ls -la
+
+      - name: Self-check one bundle
+        working-directory: ${{ inputs.artifact-dir }}
+        run: |
+          set -euo pipefail
+          identity="https://github.com/${{ github.repository }}"
+          identity="${identity}/.github/workflows/release.yml@refs/tags/${{ inputs.tag }}"
+          cosign verify-blob \
+            --bundle CHECKSUMS.txt.sigstore.json \
+            --certificate-identity "${identity}" \
+            --certificate-oidc-issuer "https://token.actions.githubusercontent.com" \
+            CHECKSUMS.txt
+          echo "Self-check passed for CHECKSUMS.txt.sigstore.json"
+
+      - name: Upload bundles to release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ inputs.tag }}
+          files: |
+            ${{ inputs.artifact-dir }}/*.sigstore.json
+            ${{ inputs.artifact-dir }}/CHECKSUMS.txt
