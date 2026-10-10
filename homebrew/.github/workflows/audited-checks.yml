@@ -1,0 +1,34 @@
+name: audited checks
+on:
+  push:
+    branches: [main]
+  pull_request:
+jobs:
+  formulae:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.3"
+      - name: Ruby syntax check on formulae
+        run: |
+          shopt -s nullglob
+          files=(Formula/*.rb)
+          if [ ${#files[@]} -eq 0 ]; then echo "no formulae found"; exit 1; fi
+          for f in "${files[@]}"; do
+            echo "checking $f"
+            ruby -c "$f"
+          done
+      - name: Formula invariants
+        run: |
+          for f in Formula/*.rb; do
+            echo "invariants: $f"
+            grep -qE '^\s*url "' "$f" || { echo "$f: missing url"; exit 1; }
+            grep -qE '^\s*sha256 "[0-9a-f]{64}"' "$f" || { echo "$f: sha256 must be 64 hex chars"; exit 1; }
+            grep -qE '^\s*license "' "$f" || { echo "$f: missing license line"; exit 1; }
+            grep -qE '^\s*test do' "$f" || { echo "$f: missing test block"; exit 1; }
+            grep -qE '^\s*homepage "' "$f" || { echo "$f: missing homepage"; exit 1; }
+          done
+          echo "formula invariants ok"
