@@ -1,0 +1,10 @@
+# CuNi Transparency Log
+
+> An append-only, Merkle-rooted (RFC 6962) public transparency log for CuNi exactness receipts. Proves a receipt existed and the log was never rewritten — NOT that the claim was true. Bootstrap TEST key; the production root key ceremony has not happened.
+
+## Docs
+
+- [README](https://github.com/ceedot-rock/cuni-transparency): the honest boundary, quickstart, submission rules
+- [CuNi](https://github.com/ceedot-rock/cuni): the language whose signed exactness receipts this log records
+- [CuNi Studio](https://cuni-studio.fly.dev/): hosted playground — run the exactness gate in the browser
+- [Agent-Rider](https://github.com/ceedot-rock/Agent-Rider): the agent network (Rider identity binding is Phase 2)

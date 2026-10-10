@@ -1,7 +1,7 @@
 # CuNi Transparency Log
 
 An append-only, Merkle-rooted (RFC 6962) public transparency log for
-CuNi v0.10.0 **exactness receipts** — signed statements that a given
+[CuNi](https://github.com/ceedot-rock/cuni) v0.10.0 **exactness receipts** — signed statements that a given
 CuNi program produced a given output on a given input, exactly. It
 works like Certificate Transparency (CT): every receipt is publicly
 logged under a Merkle tree root that is itself published (here, in
@@ -11,6 +11,10 @@ the log has never been silently rewritten.
 Receipts are Ed25519-signed by their *issuer's own* key. The log
 accepts any receipt whose signature verifies against the public key
 stated inside the receipt.
+
+Produce receipts with the [CuNi compiler](https://github.com/ceedot-rock/cuni)
+(`cuni check --json --sign <keyfile>`), or try exactness with no install
+in [CuNi Studio](https://cuni-studio.fly.dev/).
 
 ## What the log proves — and what it does NOT
 
@@ -86,8 +90,7 @@ fails to verify is rejected, never logged.
 
 ```
 cuni-transparency/
-├── log/                # the append-only receipt store (one file per receipt)
-├── roots/              # hourly Merkle roots, one per hour (in git)
+├── log/                # the append-only receipt store: leaves/, proofs/, roots/
 ├── submissions/pending/# inbox — receipts awaiting validation
 ├── keys/               # log signing keys (pubkeys; bootstrap TEST key)
 ├── crates/             # Rust: Merkle tree + publisher crates
@@ -101,10 +104,11 @@ this layout is the intended shape as of v0.1.0.*
 ## Submission rules
 
 - **Schema:** a receipt is a JSON document containing the CuNi
-  program identifier, input hash, output hash, exactness statement,
-  issuer public key (Ed25519, base64), and issuer signature (Ed25519,
-  base64) over the canonical receipt body. See
-  `fixtures/receipt.example.json` for the canonical shape.
+  program identifier (`path` + `source_hash`), the exact output hash
+  (`stdout_hash`), the exactness statement, the pinned compiler version
+  (`cuni_version`), the signer public key (Ed25519, hex), and the
+  signature (Ed25519, hex) over the receipt body. See
+  `fixtures/sample-receipt.json` for the canonical shape.
 - **Signature must verify:** the publisher checks the Ed25519
   signature against the receipt's *stated* public key before logging.
   Invalid signatures are rejected with the file left in place for
@@ -188,6 +192,16 @@ Partially mitigated: invalid-signature receipts are rejected, exact
 duplicates are dropped, and the 500-per-run cap bounds ingestion.
 Sybil resistance (cost or identity per submission) is a Phase 2
 question, tied to Rider identity.
+
+## Related
+
+- [CuNi](https://github.com/ceedot-rock/cuni) — the exact multi-target
+  language whose signed exactness receipts this log records.
+- [CuNi Studio](https://cuni-studio.fly.dev/) — hosted playground;
+  run the exactness gate in the browser.
+- [Agent-Rider](https://github.com/ceedot-rock/Agent-Rider) — the agent
+  network; binding logged receipts to Rider signed-agent identities is
+  Phase 2 (planned).
 
 ## License
 
