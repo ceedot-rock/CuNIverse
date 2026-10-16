@@ -52,8 +52,11 @@ jobs:
       - name: Install Lua 5.4 (native lua seat runs as lua5.4)
         run: sudo apt-get update && sudo apt-get install -y lua5.4
 
+      - name: Install checksum-pinned native solc 0.8.28
+        run: bash .github/scripts/install-solc.sh
+
       - name: Build
-        run: cargo build --verbose
+        run: cargo build --locked --verbose
 
       - name: Bank hook must exist
         run: |
@@ -64,5 +67,8 @@ jobs:
       - name: Studio citizen PASS shape smoke
         run: python3 -m unittest playground.test_citizen_pass -v
 
+      - name: Cross-chain Solidity compilation and exactness
+        run: cargo test --locked --test proof_crosschain -- --nocapture
+
       - name: Test
-        run: cargo test --verbose
+        run: cargo test --locked --verbose
